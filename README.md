@@ -1,0 +1,1 @@
+nuxt + babel + jest + cypress 환경 Template
