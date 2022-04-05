@@ -12,21 +12,21 @@
     <span
       class="btn-box"
       v-if="!mapLoading"> 
-      <button
+      <!-- <button
         class="btn btn-light cur-btn"
         @click="initCurLocation">
         현재위치로 돌아가기
-      </button>
+      </button> -->
       <button
         v-if="!draw"
         class="btn btn-light draw-btn"
-        @click="drawOn">
-        활동루트 그리기
-      </button> 
+        @click="drawPolyLine">
+        활동경로 그리기
+      </button>
       <button
         v-if="draw"
         class="btn btn-light draw-btn"
-        @click="drawOff">
+        @click="erasePolyLine">
         지우기
       </button>
     </span>
@@ -37,32 +37,10 @@
 </template>
 
 <script>
-/* eslint-disable no-undef */
-let map = null;
-let poly = null;
-let curPosMaker = null;
-let clickEventListner = null;
-let curMakers = [];
-const drawPolygon = () => {
-  const coords = [];
-  curMakers.forEach(marker =>  {
-     coords.push({
-      lat : marker.position.lat(),
-      lng : marker.position.lng(),
-      })
-  })
-  const polygon = new google.maps.Polygon({
-    paths: coords,
-    strokeColor: "#FF0000",
-    strokeOpacity: 0.8,
-    strokeWeight: 3,
-    fillColor: "#FF0000",
-    fillOpacity: 0.35,
-  });
-  polygon.setMap(map);
-}
 import Toasts from '~/components/Toasts'
 import Loader from '~/components/Loader'
+import GoogleMap from '~/plugins/GoogleMap.js'
+let googleMap = null;
 export default {
   components: {
     Toasts,
@@ -70,89 +48,39 @@ export default {
   },
   data() {
     return {
-      curPos : {},
+      curPosMarker : null,
       showToastFlag: false,
       mapLoading : true,
       errorMessage : '',
-      draw : false
+      draw : false,
+      clickEventListner : null,
     }
   },
  mounted () {
-    this.initMap();
-    this.initCurLocation();
+    this.initGoogleMap();
+    this.mapLoading = false;
+    //this.initCurLocation();
   },
   methods: {
     // 구글지도 초기화
-    initMap(){
+    initGoogleMap(){
       const $map = document.getElementById('map');
-      const myungdongMcdonald = { lat: 37.5642119, lng: 126.9845277 };
-      map = new google.maps.Map($map, {
-        zoom: 15,
-        center: myungdongMcdonald,
-      });
-    }
-    // 폴리라인 그리기
-    ,drawOn(){
-      if(!this.draw) this.draw = true;
-      poly = new google.maps.Polyline({
-              strokeColor: "#000000",
-              strokeOpacity: 1.0,
-              strokeWeight: 3,
-            });
-      poly.setMap(map);
-      clickEventListner = map.addListener('click',(e) => {
-        //새로운 라인 추가
-        poly.getPath().push(e.latLng);
-        const marker = new google.maps.Marker({
-          position: e.latLng,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 3,
-          },
-          editable: true,
-          draggable: false,
-          map: map,
-        });
-        //첫 마커
-        if(curMakers.length === 0){
-          marker.addListener("click", () => {
-            // '점' 또는 '선'인 상황이면
-            if(curMakers.length === 1 || curMakers.length === 2) this.drawOff();
-            drawPolygon();
-            this.removePolyLine();
-          })
-        }  else {
-          marker.addListener("click", ()=>{
-            // '점' 또는 '선'인 상황이면
-            if(curMakers.length === 1 || curMakers.length === 2) this.drawOff();
-            let start = curMakers.indexOf(marker);
-            path.removeAt(start);
-            marker.setMap(null);
-            curMakers.splice(start, 1)
-          })
-        }
-        curMakers.push(marker);
-      });
-    }
-    //폴리라인 지우기
-    ,drawOff(){
-      poly.setMap(null);
-      this.draw = false;
-      google.maps.event.removeListener(clickEventListner);
-      curMakers.forEach(marker => marker.setMap(null));
-      curMakers = [];
+      const center = { lat: 37.5642119, lng: 126.9845277 };
+      googleMap = new GoogleMap($map, {zoom : 15, center}); 
     }
     /**
      * 현재위치 초기화
      */
-    , async initCurLocation(){
+    ,async initCurLocation(){
       try {
+        if(this.curPosMarker){
+          this.curPosMarker.setMap(null);
+          this.curPosMarker = null;
+        }
         this.mapLoading = true;
-        if(curPosMaker) curPosMaker.setMap(null);
         const pos = await this.getCurrentPosition();
-        map.setCenter(pos);
-        this.curPos = {...pos};
-        this.addCurPosMarker();
+        googleMap.setCenter(pos);
+        return pos;
       } catch(error){
         this.showToast(error);
       } finally {
@@ -167,6 +95,7 @@ export default {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
+              console.log(position)
               const pos = {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
@@ -181,15 +110,68 @@ export default {
           reject(`navigator.geolocation is null`)
         }
       })
+    }    
+    // 폴리라인 그리기
+    ,async drawPolyLine(){
+      let position = await this.initCurLocation();
+      position = new google.maps.LatLng(position.lat, position.lng)
+      if(!this.draw) this.draw = true;
+      googleMap.createPolyLine({
+        strokeColor: "#000000",
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+        }
+      );
+      const option = {
+        position,
+        draggable: true,
+      }
+      const marker = googleMap.createPolyLineMarker(option);
+
+      marker.addListener("click", () => {
+          // '점' 또는 '선'이 아니면
+          if(googleMap.polyMarkers.length > 2) googleMap.drawPolygon();
+          googleMap.removePolyLine();
+          googleMap.removeListener(this.clickEventListner)
+          this.draw = false;
+      })
+      marker.addListener("dragend", (e) => {
+        console.log(googleMap.polyLine.getPath().Ed[0] = e.latLng);
+      })
+      googleMap.polyMarkers.push(marker);
+      this.curPosMarker = marker;
+      const cb = (e) => {
+        console.log(this.curPosMarker.draggable);
+        this.curPosMarker.setDraggable(false);
+        const option = {
+          position: e.latLng,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 3,
+          },
+            draggable: false,
+        }
+        const marker = googleMap.createPolyLineMarker(option);
+        marker.addListener("click", ()=>{
+          // '점' 또는 '선'인 상황이면
+          if(googleMap.polyMarkers.length === 1 || googleMap.polyMarkers.length === 2) {
+            googleMap.removePolyLine();
+            googleMap.removeListener(this.clickEventListner)
+            this.draw = false;
+          }else{
+              googleMap.removePolyLineMarker(marker);
+          }
+          
+        })
+        googleMap.polyMarkers.push(marker);
+      }
+      this.clickEventListner = googleMap.addEventListner('click', cb)
     }
-    /**
-     * 마커 만들기
-     */
-    ,addCurPosMarker(){
-      curPosMaker = new google.maps.Marker({
-          position: this.curPos,
-          map: map,
-      });
+    //폴리라인 지우기
+    ,erasePolyLine(){
+      this.draw = false;
+      googleMap.removePolyLine();
+      googleMap.removeListener(this.clickEventListner)
     }
     ,showToast(message){
       if(this.showToastFlag) return;
