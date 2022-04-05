@@ -3,13 +3,14 @@
     :style="{ 
       width: `${size}rem`, 
       height: `${size}rem`,
+      color: `${color}`,
       zIndex
     }"
     :class="{
       absolute,
       fixed
     }"
-    class="spinner-border text-primary"></div>
+    class="spinner-border"></div>
 </template>
 
 <script>
@@ -30,6 +31,10 @@ export default {
     zIndex: {
       type: Number,
       default: 0
+    },
+    color: {
+      type:String,
+      default:'#FDC000'
     }
   }
 }
@@ -38,10 +43,10 @@ export default {
 <style lang="scss" scoped>
 .spinner-border {
   margin: auto;
-  top: 0;
   left: 0;
   bottom: 0;
   right: 0;
+  top : 0;
   &.absolute {
     position: absolute;
   }
