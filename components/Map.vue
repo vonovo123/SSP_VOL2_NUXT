@@ -12,11 +12,6 @@
     <span
       class="btn-box"
       v-if="!mapLoading"> 
-      <!-- <button
-        class="btn btn-light cur-btn"
-        @click="initCurLocation">
-        현재위치로 돌아가기
-      </button> -->
       <button
         v-if="!draw"
         class="btn btn-light draw-btn"
@@ -24,10 +19,22 @@
         활동경로 그리기
       </button>
       <button
+        v-if="draw && !selected"
+        class="btn btn-light draw-btn"
+        @click="selectdrawPolyLineType('cur')">
+        현재위치에서 시작
+      </button>
+      <button
+        v-if="draw && !selected"
+        class="btn btn-light draw-btn"
+        @click="selectdrawPolyLineType('sel')">
+        시작점 정하기
+      </button>
+      <button
         v-if="draw"
         class="btn btn-light draw-btn"
         @click="erasePolyLine">
-        지우기
+        되돌리기
       </button>
     </span>
     <toasts
@@ -53,49 +60,40 @@ export default {
       mapLoading : true,
       errorMessage : '',
       draw : false,
+      selected : false,
       clickEventListner : null,
     }
   },
- mounted () {
+ mounted() {
     this.initGoogleMap();
     this.mapLoading = false;
-    //this.initCurLocation();
   },
   methods: {
-    // 구글지도 초기화
+    // 구글지도 불러오기 
     initGoogleMap(){
       const $map = document.getElementById('map');
       const center = { lat: 37.5642119, lng: 126.9845277 };
-      googleMap = new GoogleMap($map, {zoom : 15, center}); 
+      googleMap = new GoogleMap($map, {zoom : 13, center}); 
     }
-    /**
-     * 현재위치 초기화
-     */
+    // 현재위치 가져오기
     ,async initCurLocation(){
       try {
-        if(this.curPosMarker){
-          this.curPosMarker.setMap(null);
-          this.curPosMarker = null;
-        }
         this.mapLoading = true;
         const pos = await this.getCurrentPosition();
         googleMap.setCenter(pos);
         return pos;
       } catch(error){
-        this.showToast(error);
+        this.showToast(error, 2000);
       } finally {
         this.mapLoading = false;
       } 
     }
-    /**
-     * 현재위치 조회
-     */
+    // 현재위치 조회
     ,getCurrentPosition() {
       return new Promise((resolve, reject) => {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              console.log(position)
               const pos = {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
@@ -110,38 +108,69 @@ export default {
           reject(`navigator.geolocation is null`)
         }
       })
-    }    
-    // 폴리라인 그리기
-    ,async drawPolyLine(){
-      let position = await this.initCurLocation();
-      position = new google.maps.LatLng(position.lat, position.lng)
-      if(!this.draw) this.draw = true;
-      googleMap.createPolyLine({
-        strokeColor: "#000000",
-        strokeOpacity: 1.0,
-        strokeWeight: 3
-        }
-      );
+    }  
+    //마커 만들기 공통함수
+    ,makeMarker(option,events){
+      const marker = googleMap.createPolyLineMarker(option);
+      Object.entries(events).forEach(([key, func]) => {
+        marker.addListener(key, func);
+      })
+      return marker;
+    }
+    //polyLine의 시작점이 되는 마커 만들기
+    ,makePolyLineStartMarker(position){
       const option = {
         position,
         draggable: true,
       }
-      const marker = googleMap.createPolyLineMarker(option);
-
-      marker.addListener("click", () => {
+      const events = {
+        click : () => {
           // '점' 또는 '선'이 아니면
           if(googleMap.polyMarkers.length > 2) googleMap.drawPolygon();
-          googleMap.removePolyLine();
-          googleMap.removeListener(this.clickEventListner)
-          this.draw = false;
-      })
-      marker.addListener("dragend", (e) => {
-        console.log(googleMap.polyLine.getPath().Ed[0] = e.latLng);
-      })
+          this.erasePolyLine();
+        },
+        dragend : (e) => {
+          googleMap.polyLine.getPath().getArray()[0] = e.latLng;
+        }
+      }
+      const marker = this.makeMarker(option, events);
       googleMap.polyMarkers.push(marker);
       this.curPosMarker = marker;
+    }
+    // 경로그리기 버튼 선택 
+    ,drawPolyLine(){
+      this.draw = true;
+      // PolyLine 만들기
+      googleMap.createPolyLine({
+        strokeColor: "#000000",
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+      });
+    }
+    // 경로그리기 - 현재위치에서 버튼 선택
+    ,async selectdrawPolyLineType(type){
+      this.selected = true;
+      if(type === 'cur'){
+        let position = await this.initCurLocation();
+        let latLng = new google.maps.LatLng(position.lat, position.lng)
+        //현재위치에 마커 만들기
+        this.makePolyLineStartMarker(latLng);
+        this.drawPolyLineClickEvent()
+      } if(type === 'sel'){
+        this.showToast(`지도를 터치해서 시작점을 지정해주세요.`);
+        // 사용자 지정 위치에 마커 만들기
+        const clickEventListner = googleMap.addEventListner('click', (e) => {
+          this.hideToast();
+          this.makePolyLineStartMarker(e.latLng);
+          this.drawPolyLineClickEvent();
+          googleMap.removeListener(clickEventListner);
+        })
+      }
+    }
+    //그리기 상태에서 지도 클릭시 새로운 마커 만들기
+    ,drawPolyLineClickEvent(){
       const cb = (e) => {
-        console.log(this.curPosMarker.draggable);
+        //시작마커 이동 불가능하도록 변경
         this.curPosMarker.setDraggable(false);
         const option = {
           position: e.latLng,
@@ -151,36 +180,41 @@ export default {
           },
             draggable: false,
         }
-        const marker = googleMap.createPolyLineMarker(option);
-        marker.addListener("click", ()=>{
-          // '점' 또는 '선'인 상황이면
-          if(googleMap.polyMarkers.length === 1 || googleMap.polyMarkers.length === 2) {
-            googleMap.removePolyLine();
-            googleMap.removeListener(this.clickEventListner)
-            this.draw = false;
-          }else{
-              googleMap.removePolyLineMarker(marker);
+        const events = {
+          click : ()=>{
+            googleMap.removePolyLineMarker(marker);
+            //시작마커만남을경우 시작마커 이동가능하도록 변경
+            if(googleMap.polyMarkers.length === 1) this.curPosMarker.setDraggable(true);
           }
-          
-        })
+        }
+        //polyLine을 구성할 추가마커 만들기
+        const marker = this.makeMarker(option, events)
         googleMap.polyMarkers.push(marker);
       }
-      this.clickEventListner = googleMap.addEventListner('click', cb)
+      this.clickEventListner = googleMap.addEventListner('click', cb)      
     }
-    //폴리라인 지우기
+    //전체 polyLine 지우기
     ,erasePolyLine(){
       this.draw = false;
+      this.selected = false;
+      if(this.showToastFlag) this.hideToast();
       googleMap.removePolyLine();
       googleMap.removeListener(this.clickEventListner)
     }
-    ,showToast(message){
+    // 토스트창 보이기
+    ,showToast(message, time){
       if(this.showToastFlag) return;
         this.errorMessage = message;
         this.showToastFlag = true;
+        if(!time) return;
         setTimeout(()=>{
-            this.errorMessage = ``;
-            this.showToastFlag = false;
-        }, 2000)
+          this.hideToast();
+        }, time)
+    }
+    // 토스트창 감추기
+    ,hideToast(){
+      this.showToastFlag = false;
+      this.errorMessage = ``;
     }
   },
 }
@@ -201,8 +235,8 @@ export default {
     bottom : 5%;
     left: calc(50% - 200px);
     display: flex;
+    justify-content: center;
     & .btn {
-      margin:10px;
     }
     .cur-btn{
     
