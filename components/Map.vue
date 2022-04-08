@@ -40,18 +40,24 @@
     <toasts
       :show="showToastFlag"
       :error-message="errorMessage" />
+    <modal
+      :show="modal"
+      :content="modalContent"
+      @close="hideModal" />  
   </div>
 </template>
 
 <script>
 import Toasts from '~/components/Toasts'
+import Modal from '~/components/Modal'
 import Loader from '~/components/Loader'
 import GoogleMap from '~/plugins/GoogleMap.js'
 let googleMap = null;
 export default {
   components: {
     Toasts,
-    Loader
+    Loader,
+    Modal
   },
   data() {
     return {
@@ -62,6 +68,13 @@ export default {
       draw : false,
       selected : false,
       clickEventListner : null,
+      modal : false,
+      modalContent: {
+        title : '계속하시겠습니까?',
+        body: '기록화면으로 이동합니다.',
+        close : '닫기',
+        confirm : '계속'
+      }
     }
   },
  mounted() {
@@ -127,6 +140,7 @@ export default {
         click : () => {
           // '점' 또는 '선'이 아니면
           if(googleMap.polyMarkers.length > 2) googleMap.drawPolygon();
+          this.showModal();
           this.erasePolyLine();
         },
         dragend : (e) => {
@@ -215,6 +229,13 @@ export default {
     ,hideToast(){
       this.showToastFlag = false;
       this.errorMessage = ``;
+    },
+    showModal(){
+      this.modal = true;
+    },
+    hideModal(){
+      console.log('hide');
+      this.modal = false;
     }
   },
 }

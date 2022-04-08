@@ -21,7 +21,7 @@ export default {
     }
   },
   created () {
-    this.setData();
+    //this.setData();
   },
 
 }
