@@ -23,13 +23,21 @@ export default class GoogleMap {
     })
     const polygon = new google.maps.Polygon({
       paths: coords,
-      strokeColor: "#FF0000",
+      strokeColor: '#FF0000',
       strokeOpacity: 0.8,
-      strokeWeight: 3,
-      fillColor: "#FF0000",
+      strokeWeight: 2,
+      fillColor: '#FF0000',
       fillOpacity: 0.35,
+      value:'test'
     });
     polygon.setMap(this.map);
+    polygon.addListener('mouseover', () => {
+      console.log('in');
+      console.log(polygon);
+    })
+    polygon.addListener('mouseout', () => {
+      console.log('out');
+    })
   }
   
   createPolyLine({strokeColor, strokeOpacity, strokeWeight}){
