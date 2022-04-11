@@ -43,7 +43,8 @@
     <modal
       :show="modal"
       :content="modalContent"
-      @close="hideModal" />  
+      @close="cancel"
+      @confirm="confirm" />  
   </div>
 </template>
 
@@ -52,6 +53,7 @@ import Toasts from '~/components/Toasts'
 import Modal from '~/components/Modal'
 import Loader from '~/components/Loader'
 import GoogleMap from '~/plugins/GoogleMap.js'
+import { mapState } from 'vuex'
 let googleMap = null;
 export default {
   components: {
@@ -61,9 +63,10 @@ export default {
   },
   data() {
     return {
+      coords: null,
       curPosMarker : null,
+      drawPolygon : null,
       showToastFlag: false,
-      mapLoading : true,
       errorMessage : '',
       draw : false,
       selected : false,
@@ -77,9 +80,13 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapState('map', ['mapLoading'])
+  },
  mounted() {
-    this.initGoogleMap();
-    this.mapLoading = false;
+   this.$store.dispatch('map/initDataMap', {mapLoading:true})
+   this.initGoogleMap();
+   this.$store.dispatch('map/initDataMap', {mapLoading:false})
   },
   methods: {
     // 구글지도 불러오기 
@@ -91,14 +98,14 @@ export default {
     // 현재위치 가져오기
     ,async initCurLocation(){
       try {
-        this.mapLoading = true;
+        this.$store.dispatch('map/initDataMap', {mapLoading:true})
         const pos = await this.getCurrentPosition();
         googleMap.setCenter(pos);
         return pos;
       } catch(error){
         this.showToast(error, 2000);
       } finally {
-        this.mapLoading = false;
+        this.$store.dispatch('map/initDataMap', {mapLoading:false})
       } 
     }
     // 현재위치 조회
@@ -139,7 +146,9 @@ export default {
       const events = {
         click : () => {
           // '점' 또는 '선'이 아니면
-          if(googleMap.polyMarkers.length > 2) googleMap.drawPolygon();
+          if(googleMap.polyMarkers.length > 2) {
+            this.coords = JSON.stringify(googleMap.drawPolygon())
+          } 
           this.showModal();
           this.erasePolyLine();
         },
@@ -233,8 +242,14 @@ export default {
     showModal(){
       this.modal = true;
     },
-    hideModal(){
-      console.log('hide');
+    cancel(){
+      this.modal = false;
+      this.drawPolygon.setMap(null);
+      this.drawPolygon = null;
+      this.coords = null;
+    },
+    confirm(){
+      this.$store.dispatch('map/initDataMap', {coords : this.coords})  
       this.modal = false;
     }
   },
