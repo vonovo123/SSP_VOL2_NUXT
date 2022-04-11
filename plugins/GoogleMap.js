@@ -32,12 +32,11 @@ export default class GoogleMap {
     });
     polygon.setMap(this.map);
     polygon.addListener('mouseover', () => {
-      console.log('in');
       console.log(polygon);
     })
     polygon.addListener('mouseout', () => {
-      console.log('out');
     })
+    return coords;
   }
   
   createPolyLine({strokeColor, strokeOpacity, strokeWeight}){

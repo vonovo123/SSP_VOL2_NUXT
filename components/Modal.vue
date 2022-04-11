@@ -32,7 +32,8 @@
             </button>
             <button
               type="button"
-              class="btn btn-primary">
+              class="btn btn-primary"
+              @click="confirm">
               {{ content.confirm }}
             </button>
           </div>
@@ -70,6 +71,9 @@ export default {
   methods: {
     hideModal() {
       this.$emit('close');
+    },
+    confirm(){
+      this.$emit('confirm');
     }
   },
   mounted () {
