@@ -12,8 +12,9 @@
           alt="..." /> -->
         <strong class="me-auto">알림</strong>
       </div>
-      <div class="toast-body">
-        {{ errorMessage }}
+      <div
+        class="toast-body"
+        v-html="errorMessage">
       </div>
     </div>
   </div>

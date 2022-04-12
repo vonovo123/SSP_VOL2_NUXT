@@ -1,8 +1,6 @@
-import GoogleMap from '~/plugins/GoogleMap.js'
 export default {
   namespaced: true,
   state :() =>({
-    mapLoading: false,
     coords: null
   }),
   getters:{},
@@ -15,8 +13,7 @@ export default {
   },
   actions:{
     initDataMap({state, commit},payLoad){
-      console.log(`initGoogleMap`);
-      commit('updateState', {mapLoading, payLoad})
+      commit('updateState', payLoad)
     }
   }
 }

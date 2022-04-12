@@ -41,9 +41,9 @@
       :show="showToastFlag"
       :error-message="errorMessage" />
     <modal
-      :show="modal"
+      :show="showModalFlag"
       :content="modalContent"
-      @close="cancel"
+      @close="cancle"
       @confirm="confirm" />  
   </div>
 </template>
@@ -53,8 +53,9 @@ import Toasts from '~/components/Toasts'
 import Modal from '~/components/Modal'
 import Loader from '~/components/Loader'
 import GoogleMap from '~/plugins/GoogleMap.js'
-import { mapState } from 'vuex'
+//import { mapState } from 'vuex'
 let googleMap = null;
+let clickEventListner = null;
 export default {
   components: {
     Toasts,
@@ -64,14 +65,12 @@ export default {
   data() {
     return {
       coords: null,
-      curPosMarker : null,
-      drawPolygon : null,
-      showToastFlag: false,
+      mapLoading :true,
       errorMessage : '',
       draw : false,
       selected : false,
-      clickEventListner : null,
-      modal : false,
+      showModalFlag : false,
+      showToastFlag: false,
       modalContent: {
         title : '계속하시겠습니까?',
         body: '기록화면으로 이동합니다.',
@@ -81,31 +80,30 @@ export default {
     }
   },
   computed: {
-    ...mapState('map', ['mapLoading'])
+    //...mapState('map', ['mapLoading'])
   },
  mounted() {
-   this.$store.dispatch('map/initDataMap', {mapLoading:true})
-   this.initGoogleMap();
-   this.$store.dispatch('map/initDataMap', {mapLoading:false})
+    this.initGoogleMap();
   },
   methods: {
     // 구글지도 불러오기 
     initGoogleMap(){
-      const $map = document.getElementById('map');
-      const center = { lat: 37.5642119, lng: 126.9845277 };
-      googleMap = new GoogleMap($map, {zoom : 13, center}); 
+        const $map = document.getElementById('map');
+        const center = { lat: 37.5642119, lng: 126.9845277 };
+        googleMap = new GoogleMap($map, {zoom : 13, center});
+        if(!googleMap) this.showToast('지도불러오기에 실패했습니다.<br/> 인터넷 연결상태를 확인후 다시 시도해주세요.')
+        this.mapLoading = false;
     }
     // 현재위치 가져오기
     ,async initCurLocation(){
       try {
-        this.$store.dispatch('map/initDataMap', {mapLoading:true})
+        this.mapLoading = true;
         const pos = await this.getCurrentPosition();
-        googleMap.setCenter(pos);
         return pos;
       } catch(error){
         this.showToast(error, 2000);
       } finally {
-        this.$store.dispatch('map/initDataMap', {mapLoading:false})
+        this.mapLoading = false;
       } 
     }
     // 현재위치 조회
@@ -129,14 +127,6 @@ export default {
         }
       })
     }  
-    //마커 만들기 공통함수
-    ,makeMarker(option,events){
-      const marker = googleMap.createPolyLineMarker(option);
-      Object.entries(events).forEach(([key, func]) => {
-        marker.addListener(key, func);
-      })
-      return marker;
-    }
     //polyLine의 시작점이 되는 마커 만들기
     ,makePolyLineStartMarker(position){
       const option = {
@@ -147,7 +137,7 @@ export default {
         click : () => {
           // '점' 또는 '선'이 아니면
           if(googleMap.polyMarkers.length > 2) {
-            this.coords = JSON.stringify(googleMap.drawPolygon())
+            googleMap.createPolygon();
           } 
           this.showModal();
           this.erasePolyLine();
@@ -156,9 +146,9 @@ export default {
           googleMap.polyLine.getPath().getArray()[0] = e.latLng;
         }
       }
-      const marker = this.makeMarker(option, events);
-      googleMap.polyMarkers.push(marker);
-      this.curPosMarker = marker;
+      //폴리라인의 첫번째 마커이면 
+      const isFirst = true;
+      googleMap.createPolyLineMarker(option, events, isFirst);
     }
     // 경로그리기 버튼 선택 
     ,drawPolyLine(){
@@ -170,12 +160,13 @@ export default {
         strokeWeight: 3
       });
     }
-    // 경로그리기 - 현재위치에서 버튼 선택
+    // 경로그리기 - 현재위치
     ,async selectdrawPolyLineType(type){
       this.selected = true;
       if(type === 'cur'){
         let position = await this.initCurLocation();
-        let latLng = new google.maps.LatLng(position.lat, position.lng)
+        googleMap.setCenter(position);
+        const latLng = googleMap.createLatLng(position);
         //현재위치에 마커 만들기
         this.makePolyLineStartMarker(latLng);
         this.drawPolyLineClickEvent()
@@ -194,35 +185,34 @@ export default {
     ,drawPolyLineClickEvent(){
       const cb = (e) => {
         //시작마커 이동 불가능하도록 변경
-        this.curPosMarker.setDraggable(false);
+        googleMap.curPosMarker.setDraggable(false);
         const option = {
           position: e.latLng,
           icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 3,
+            path: googleMap.polyLineIconPath,
+            scale: 3
           },
-            draggable: false,
+          draggable: false,
         }
         const events = {
           click : ()=>{
             googleMap.removePolyLineMarker(marker);
             //시작마커만남을경우 시작마커 이동가능하도록 변경
-            if(googleMap.polyMarkers.length === 1) this.curPosMarker.setDraggable(true);
+            if(googleMap.polyMarkers.length === 1) googleMap.curPosMarker.setDraggable(true);
           }
         }
         //polyLine을 구성할 추가마커 만들기
-        const marker = this.makeMarker(option, events)
-        googleMap.polyMarkers.push(marker);
+        const marker = googleMap.createPolyLineMarker(option, events)
       }
-      this.clickEventListner = googleMap.addEventListner('click', cb)      
+      clickEventListner = googleMap.addEventListner('click', cb)      
     }
     //전체 polyLine 지우기
     ,erasePolyLine(){
       this.draw = false;
       this.selected = false;
-      if(this.showToastFlag) this.hideToast();
       googleMap.removePolyLine();
-      googleMap.removeListener(this.clickEventListner)
+      googleMap.removeListener(clickEventListner)
+      if(this.showToastFlag) this.hideToast();
     }
     // 토스트창 보이기
     ,showToast(message, time){
@@ -240,17 +230,18 @@ export default {
       this.errorMessage = ``;
     },
     showModal(){
-      this.modal = true;
+      this.showModalFlag = true;
     },
-    cancel(){
-      this.modal = false;
-      this.drawPolygon.setMap(null);
-      this.drawPolygon = null;
+    //모달창 닫기
+    cancle(){
+      this.showModalFlag = false;
       this.coords = null;
+      googleMap.removePolygon()
     },
+    //모달창 confirm
     confirm(){
       this.$store.dispatch('map/initDataMap', {coords : this.coords})  
-      this.modal = false;
+      this.showModalFlag = false;
     }
   },
 }
