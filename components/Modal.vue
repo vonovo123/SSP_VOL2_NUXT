@@ -95,6 +95,10 @@ export default {
 
 <style lang="scss" scoped>
   .regist {
-
+    .modal {
+      .modal-dialog {
+        top : 30%;
+      }
+    }
   }
 </style>

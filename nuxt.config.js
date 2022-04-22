@@ -54,7 +54,7 @@ export default {
   ],
   styleResources: {
     scss : [
-      '~/scss/main.scss'
+      
     ]
   },
 
