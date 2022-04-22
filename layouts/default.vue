@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="container container-xxl">
     <Header />
     <Nuxt />
     <Footer />
@@ -17,6 +17,9 @@ components: {
 }
 </script>
 
-<style>
-
+<style lang="scss">
+@import "~bootstrap/scss/bootstrap";    
+  .container  {
+    
+  }
 </style>

@@ -41,5 +41,4 @@ async function fetch(){
 }
 </script>
 <style lang="scss" scoped>
-
 </style>

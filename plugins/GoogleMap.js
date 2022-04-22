@@ -4,7 +4,7 @@ export default class GoogleMap {
     polyLine = null;
     curPosMarker = null;
     polyMarkers = [];
-    polygon = null;
+    drawPolygon = null;
     polyLineIconPath = google.maps.SymbolPath.CIRCLE;
   constructor($target, {zoom, center}){
     this.map = new google.maps.Map($target, {
@@ -54,11 +54,12 @@ export default class GoogleMap {
     })
     polygon.addListener('mouseout', () => {
     })
-    this.polygon = polygon;
+    this.drawPolygon = polygon;
+    return coords;
   }
   removePolygon(){
-    this.polygon.setMap(null);
-    this.polygon = null;
+    this.drawPolygon.setMap(null);
+    this.drawPolygon = null;
   }
   createMarker(option){
     const marker = new google.maps.Marker(option);
