@@ -37,10 +37,10 @@
         되돌리기
       </button>
     </span>
-    <toasts
+    <Toast
       :show="toastFlag"
       :error-message="errorMessage" />
-    <modal
+    <Modal
       :show="modalFlag"
       :content="modalContent"
       @close="hideModal"
@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import Toasts from '~/components/Toasts'
+import Toast from '~/components/Toast'
 import Modal from '~/components/Modal'
 import Loader from '~/components/Loader'
 import GoogleMap from '~/plugins/GoogleMap.js'
@@ -60,7 +60,7 @@ let clickEventListner = null;
 let drawPolygonCoord = null;
 export default {
   components: {
-    Toasts,
+    Toast,
     Loader,
     Modal
   },
