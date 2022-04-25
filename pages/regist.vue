@@ -1,62 +1,121 @@
 <template>
   <div class="regist">
     <div
-      class="input-wrapper"
-      v-if="who">
+      class="input-wrapper">
       <h4><span class="badge bg-warning ">누구랑 방문했나요?</span></h4>
-      <input
-        class="form-control form-control-lg"
-        type="text"
-        @keyup.enter="next('when')" />
+      <CustomInput
+        :type="'text'"
+        :input-value="registForm.who.value"
+        :target="'who'"
+        :next="'when'"
+        @input="inputValue"
+        @keyup="next" />
     </div>
     <transition name="fade">
       <div
         class="input-wrapper"
-        v-if="when">
+        v-if="registForm.when.visibility">
         <h4><span class="badge  bg-warning ">언제 방문했나요?</span></h4>
-        <input
-          class="form-control form-control-lg"
-          type="date" 
-          @change="next('why')" />
+        <CustomInput
+          :type="'date'"
+          :input-value="registForm.when.value"
+          :target="'when'"
+          :next="'why'"
+          @input="inputValue"
+          @change="next" />
       </div>
     </transition>
     <transition name="fade">
       <div
         class="input-wrapper"
-        v-if="why">
-        <h4><span class="badge bg-warning ">방문이유가 무엇인가요?</span></h4>
-        <input
-          class="form-control form-control-lg"
-          type="text" 
-          @keyup.enter="next('how')" />
+        v-if="registForm.why.visibility">
+        <h4><span class="badge bg-warning ">왜 여길 방문했나요?</span></h4>
+        <CustomInput
+          :type="'text'"
+          :input-value="registForm.why.value"
+          :target="'why'"
+          :next="'how'"
+          @input="inputValue"
+          @keyup="next" />
       </div>
     </transition>
     <transition name="fade">
       <div
         class="input-wrapper"
-        v-if="how">
+        v-if="registForm.how.visibility">
         <h4><span class="badge bg-warning ">어땠나요?</span></h4>
-        <input
-          class="form-control form-control-lg"
-          type="text" />
+        <CustomInput
+          :type="'text'"
+          :input-value="registForm.how.value"
+          :target="'how'"
+          :next="'registBtn'"
+          @input="inputValue"
+          @keyup="next" />
       </div>
+    </transition>
+    <transition name="fade">
+      <button
+        type="button"
+        class="btn btn-success"
+        v-if="registForm.registBtn.visibility">
+        등록하기
+      </button>
+    </transition>
+    <transition name="fade">
+      <button
+        type="button"
+        class="btn btn-danger"
+        v-if="registForm.registBtn.visibility"
+        @click="reset">
+        삭제
+      </button>
     </transition>
   </div>
 </template>
 
 <script>
+import CustomInput from '~/components/CustomInput';
 export default {
+  components: {
+    CustomInput,
+  },
   data() {
     return {
-      who:true,
-      when:false,
-      why: false,
-      how: false
+      registForm : this.initRegistForm()
     }
   },
   methods: {
-    next(target) {
-      this[target]= true;
+    initRegistForm(){
+      return {
+        who:{
+          value:'',
+          visibility : true
+        },
+        when:{
+          value:'',
+          visibility : false
+        },
+        why:{
+          value:'',
+          visibility : false
+        },
+        how:{
+          value:'',
+          visibility : false
+        },
+        registBtn:{
+          visibility : false
+        }
+      }
+    },
+    next({next}) {
+      if(!this.registForm[next].visibility) this.registForm[next].visibility= true;
+    },
+    reset(){
+      this.registForm = this.initRegistForm();
+    },
+    inputValue({target, value}){
+      this.registForm[target].value = value;
     }
   },
 }
@@ -84,7 +143,7 @@ export default {
       }
     }
     .fade-enter-active, .fade-leave-active {
-      transition: opacity 1s;
+      transition: opacity 0.5s;
     }
     .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
       opacity: 0;
