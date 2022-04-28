@@ -14,6 +14,7 @@ export default {
   actions:{
     initDataMap({state, commit},payLoad){
       commit('updateState', payLoad)
+      this.$router.push('/regist')
     }
   }
 }
