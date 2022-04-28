@@ -259,7 +259,6 @@ export default {
     confirmModal(){
       this.modalFlag = false;
       this.$store.dispatch('map/initDataMap', {coords : drawPolygonCoord})  
-      this.$router.push('/regist')
     }
   },
 }
