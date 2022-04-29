@@ -8,87 +8,68 @@
           :src="mapSnapShotUrl" />
       </div>
       <div class="input-wrapper">
-        <div
-          class="custom-input-wrapper">
-          <h4><span class="badge bg-warning ">누구랑 방문했나요?</span></h4>
-          <CustomInput
-            :type="'text'"
-            :input-value="registForm.who.value"
-            :target="'who'"
-            :next="'when'"
-            @input="inputValue"
-            @keyup="next" />
+        <div class="custom-input-wrapper">
+          <!-- <h4><span class="badge bg-warning ">이 장소에서의 추억을 기록해보세요.</span></h4> -->
+          <CustomTextArea
+            :size="'large'"
+            :placeholder="'이 장소에서의 추억을 기록해보세요.'" />
         </div>
         <transition name="fade">
           <div
-            class="custom-input-wrapper"
-            v-if="registForm.when.visibility">
-            <h4><span class="badge  bg-warning ">언제 방문했나요?</span></h4>
+            class="custom-input-wrapper">
+            <h4><span class="badge  bg-warning ">언제?</span></h4>
             <CustomInput
               :type="'date'"
               :input-value="registForm.when.value"
               :target="'when'"
-              :next="'why'"
+              :next="'button'"
+              :size="'small'"
               @input="inputValue"
               @change="next" />
           </div>
         </transition>
         <transition name="fade">
           <div
-            class="custom-input-wrapper"
-            v-if="registForm.why.visibility">
-            <h4><span class="badge bg-warning ">왜 여길 방문했나요?</span></h4>
+            class="custom-input-wrapper">
+            <h4><span class="badge  bg-warning ">누구랑?</span></h4>
             <CustomInput
-              :type="'text'"
-              :input-value="registForm.why.value"
-              :target="'why'"
-              :next="'how'"
+              :type="'date'"
+              :input-value="registForm.when.value"
+              :target="'when'"
+              :next="'button'"
+              :size="'small'"
               @input="inputValue"
-              @keyup="next" />
+              @change="next" />
           </div>
         </transition>
         <transition name="fade">
-          <div
-            class="custom-input-wrapper"
-            v-if="registForm.how.visibility">
-            <h4><span class="badge bg-warning ">어땠나요?</span></h4>
-            <CustomInput
-              :type="'text'"
-              :input-value="registForm.how.value"
-              :target="'how'"
-              :next="'registBtn'"
-              @input="inputValue"
-              @keyup="next" />
+          <div class="btn-wrapper">
+            <button
+              type="button"
+              class="btn btn-success">
+              등록하기
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              @click="reset">
+              취소
+            </button>
           </div>
         </transition>
-        <transition name="fade">
-          <button
-            type="button"
-            class="btn btn-success"
-            v-if="registForm.registBtn.visibility">
-            등록하기
-          </button>
-        </transition>
-        <transition name="fade">
-          <button
-            type="button"
-            class="btn btn-danger"
-            v-if="registForm.registBtn.visibility"
-            @click="reset">
-            삭제
-          </button>
-        </transition>
-      </div>
-    </div>
+      </div>       
+    </div> 
   </div>
 </template>
 
 <script>
 import CustomInput from '~/components/CustomInput';
+import CustomTextArea from '~/components/CustomTextArea';
 const {GOOGLE_API_KEY} = process.env
 export default {
   components: {
     CustomInput,
+    CustomTextArea
   },
   data() {
     return {
@@ -169,6 +150,7 @@ export default {
   .regist {
     .regist-wrapper{
       display: flex;
+      justify-content:center;
       .image-wrapper{
         width:50%;
         .map-img{
@@ -178,26 +160,22 @@ export default {
       .input-wrapper{
         width:50%;
         margin-right:5%;
-        margin-left:5%;
         .custom-input-wrapper {
                 position:relative;
                 margin-bottom: 50px;
                 .badge{
                   position:absolute;
-                  left:-15px;
+                  left:-10px;
                   top:-20px;
                   z-index: 3;
                 }
-                .input{
-                  position:relative;
-                  width:80%;
-                  height: 50px;
-                  padding-left: 50px;
-                  border-width: 5px;
-                  border-style: solid;
-                  border-color: black;
-                }
           }
+      }
+      .btn-wrapper {
+        display: flex;
+        .btn{
+          width:80%
+        }
       }
       
     }

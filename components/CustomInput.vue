@@ -4,6 +4,7 @@
     :type="type"
     :target="target" 
     :value="inputValue"
+    :class="size"
     @input="input"
     @change="change" 
     @keyup="keyup" />
@@ -45,14 +46,4 @@ methods: {
 </script>
 
 <style lang="scss" scoped>
-.input{
-        position:relative;
-        width:100%;
-        height: 50px;
-        padding-left: 50px;
-        border-width: 5px;
-        border-style: solid;
-        border-color: black;
-}
-
 </style>
