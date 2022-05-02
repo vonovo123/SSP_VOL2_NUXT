@@ -3,13 +3,12 @@
     <div class="regist-wrapper">
       <div class="image-wrapper">
         <img
+          id="static-map-image"
           alt=""
-          class="map-img"
-          :src="mapSnapShotUrl" />
+          class="map-img" />
       </div>
       <div class="input-wrapper">
         <div class="custom-input-wrapper">
-          <!-- <h4><span class="badge bg-warning ">이 장소에서의 추억을 기록해보세요.</span></h4> -->
           <CustomTextArea
             :size="'large'"
             :placeholder="'이 장소에서의 추억을 기록해보세요.'" />
@@ -61,24 +60,45 @@
     </div> 
   </div>
 </template>
-
 <script>
+const {GOOGLE_API_KEY} = process.env
 import CustomInput from '~/components/CustomInput';
 import CustomTextArea from '~/components/CustomTextArea';
-const {GOOGLE_API_KEY} = process.env
+
 export default {
   components: {
     CustomInput,
     CustomTextArea
   },
+  mounted () {
+    if(process.client){
+      //const {innerWidth, innerHeight} = window;
+      const innerWidth = document.querySelector('.regist').offsetWidth;
+      const mapSnapShotUrl = this.setShapshotUrl(Math.floor(innerWidth * 0.48), 600)
+      document.querySelector('#static-map-image').setAttribute('src', mapSnapShotUrl)
+    }
+    this.addResizeEvent();
+    
+  },
   data() {
     return {
       registForm : this.initRegistForm(),
-      mapSnapShotUrl : this.setShapshotUrl(),
+      testText : ""
     }
   },
   methods: {
-    setShapshotUrl() {
+    addResizeEvent() {
+      if(process.client){
+        window.addEventListener('resize', () => {
+          console.log('resize');
+          const innerWidth = document.querySelector('.regist').offsetWidth;
+          const mapSnapShotUrl = this.setShapshotUrl(Math.floor(innerWidth * 0.45), 600)
+          document.querySelector('#static-map-image').setAttribute('src', mapSnapShotUrl)
+        })
+      }
+      
+    },
+    setShapshotUrl(width, heigth) {
       let arr = []
       if(this.$store.state.map.coords) this.$store.state.map.coords.forEach(coord => {
         let {lat, lng} = coord;
@@ -95,7 +115,7 @@ export default {
         staticMapUrl += '?center=' + 40.737102 + ',' + -73.990318;
       }
       //Set the Google Map Size.
-      staticMapUrl += '&size=600x600';
+      staticMapUrl += `&size=${width}x${heigth}`;
       //Set the Google Map Zoom.
       staticMapUrl += '&zoom=13';
       staticMapUrl += `&key=${GOOGLE_API_KEY}`;
@@ -154,18 +174,18 @@ export default {
       .image-wrapper{
         width:50%;
         .map-img{
-          border-radius: 5%;
+          border-top-left-radius: 5%;
+          border-bottom-left-radius: 5%;
         }
       }
       .input-wrapper{
         width:50%;
-        margin-right:5%;
+        background-color:burlywood;
         .custom-input-wrapper {
                 position:relative;
                 margin-bottom: 50px;
                 .badge{
                   position:absolute;
-                  left:-10px;
                   top:-20px;
                   z-index: 3;
                 }

@@ -28,7 +28,11 @@ props: {
   inputValue : {
     type :String,
     default : null
-  }
+  },
+  size : {
+    type :String,
+    default : null
+  },
 },
 emits:['input', 'change', 'keyup'],
 methods: {
