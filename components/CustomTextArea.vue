@@ -27,6 +27,7 @@ textarea {
   padding-top:15px;
   resize: none;
   border-radius: 10px;
+  border:none;
 }
 .large{
         height:300px;

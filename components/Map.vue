@@ -95,7 +95,7 @@ export default {
     initGoogleMap(){
         const $map = document.getElementById('map');
         const center = { lat: 37.5642119, lng: 126.9845277 };
-        googleMap = new GoogleMap($map, {zoom : 13, center});
+        googleMap = new GoogleMap($map, {zoom : 16, center});
         if(!googleMap) this.showToast('지도불러오기에 실패했습니다.<br/> 인터넷 연결상태를 확인후 다시 시도해주세요.')
         this.mapLoadingFlag = false;
     }
