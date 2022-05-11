@@ -1,5 +1,5 @@
 const express = require('express');
-const axios = require('axios');
+const axios = ('axios');
 const app = express();
 const {OMDB_API_KEY} = process.env
 app.use(express.json());

@@ -21,7 +21,7 @@ export default {
     }
   },
   created () {
-    this.setData();
+    //this.setData();
   },
 
 }
@@ -41,5 +41,4 @@ async function fetch(){
 }
 </script>
 <style lang="scss" scoped>
-
 </style>
